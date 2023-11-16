@@ -8,8 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import com.mehmet_inci.kotlin_hc05_ws2812.BluetoothHolder
+import com.mehmet_inci.kotlin_hc05_ws2812.ColorPickerViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.MainViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.SharedViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.UserSettingsManager
@@ -29,6 +31,8 @@ class LichteffekteFragment : Fragment() {
     val outputStream: OutputStream = btSocket!!.outputStream
     lateinit var color1: String
     var prgb: IntArray = intArrayOf(0,0,0,0,0)
+    private lateinit var colorPickerViewModel: ColorPickerViewModel
+    var rgb = intArrayOf(0,0,0,0)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,7 +41,6 @@ class LichteffekteFragment : Fragment() {
     ): View {
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
-        color1 = 0.toString()
         saveUserSettingsManager = UserSettingsManager(requireContext())
         getUserSettingsManager = UserSettingsManager(requireContext())
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
@@ -89,46 +92,41 @@ class LichteffekteFragment : Fragment() {
         }
         return binding.root
     }
-
-
-
+    
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        colorPickerViewModel = ViewModelProvider(requireActivity())[ColorPickerViewModel::class.java]
 
-        //binding.colorPickerView.attachBrightnessSlider(binding.brightnessSlide);
-        binding.colorPickerView.setColorListener(object : ColorListener {
-            override fun onColorSelected(color: Int, fromUser: Boolean) {
-                val manager = ColorPickerPreferenceManager.getInstance(requireContext())
-                binding.colorPickerView.setLifecycleOwner(requireActivity());
-                //binding.colorPickerView.setPreferenceName("MyColorPicker")
+         binding.colorPickerView.setColorListener(object : ColorListener {
+             override fun onColorSelected(color: Int, fromUser: Boolean) {
 
-                manager.restoreColorPickerData(binding.colorPickerView); // restores the
+                 val existingArray = intArrayOf(68, 0, 0, 0, 10)
+                 val byteArray1 = existingArray.map {it.toByte() }.toByteArray()
+                 outputStream.write(byteArray1)
+                 outputStream.flush()
+                 val colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.OVERLAY)
+                 // Extrahiere den ARGB-Farbwert aus dem ColorEnvelope-Objekt des colorPickerView
+                 val argb = binding.colorPickerView.colorEnvelope.argb
+                 colorPickerViewModel.selectedColor = color
+                 // Use sliceArray to create a new array 'rgb' excluding the first element (alpha channel)
+                 rgb = argb.sliceArray(1 until argb.size)
+                 // 'rgb' now contains only the RGB values from the original ARGB array
+                 sharedViewModel.getvalBrightness().observe(
+                     viewLifecycleOwner,
+                 ){val1 ->
+                     rgb = intArrayOf(val1) + rgb
+                 }
+                 val prefixElement = 68
+                 prgb = intArrayOf(prefixElement) + rgb
+                 sharedViewModel.setprgb(prgb)
+                 val byteArray = prgb.map {it.toByte() }.toByteArray()
+
+                 outputStream.write(byteArray)
+                 outputStream.flush()
 
 
-                val existingArray = intArrayOf(68, 0, 0, 0, 10)
-                val byteArray1 = existingArray.map {it.toByte() }.toByteArray()
-                outputStream.write(byteArray1)
-                outputStream.flush()
-                val colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.OVERLAY)
-                // Extrahiere den ARGB-Farbwert aus dem ColorEnvelope-Objekt des colorPickerView
-                val argb = binding.colorPickerView.colorEnvelope.argb
-                // Use sliceArray to create a new array 'rgb' excluding the first element (alpha channel)
-                var rgb = argb.sliceArray(1 until argb.size)
-                // 'rgb' now contains only the RGB values from the original ARGB array
-                sharedViewModel.getvalBrightness().observe(
-                    viewLifecycleOwner,
-                ){val1 ->
-                    rgb = intArrayOf(val1) + rgb
-                }
-                val prefixElement = 68
-                prgb = intArrayOf(prefixElement) + rgb
-                sharedViewModel.setprgb(prgb)
-                val byteArray = prgb.map {it.toByte() }.toByteArray()
-
-                outputStream.write(byteArray)
-                outputStream.flush()
-            }
-        })
+             }
+         })
 
         binding.seekBarBrightness.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
@@ -149,9 +147,14 @@ class LichteffekteFragment : Fragment() {
             }
         })
     }
-    /*fun OutputStream(IntArray:  ) {
-
-    }*/
+    override fun onStart() {
+        super.onStart()
+        val selectedColor = colorPickerViewModel.selectedColor
+        if (selectedColor != null) {
+            // Set the color to the ColorPickerView
+            binding.colorPickerView.setInitialColor(selectedColor)
+    }
+    }
 }
 
 
