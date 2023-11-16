@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:context=".ui.settings.SettingsFragment">
+
+	<TextView
+		android:id="@+id/textView_selectedItem"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="44dp"
+		android:layout_marginEnd="32dp"
+		android:text="Disconnected"
+		android:textAlignment="center"
+		android:textSize="20sp"
+		android:textStyle="bold"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<Spinner
+		android:id="@+id/spinner"
+		style="@android:style/Widget.Material.Light.Spinner.Underlined"
+		android:layout_width="0dp"
+		android:layout_height="37dp"
+		android:layout_marginTop="208dp"
+		android:background="@drawable/oval_corner_background"
+
+		android:dropDownWidth="wrap_content"
+		android:dropDownSelector="@drawable/baseline_arrow_drop_down_48"
+		android:longClickable="true"
+		android:padding="5dp"
+		android:pointerIcon="top_right_diagonal_double_arrow"
+		android:popupBackground="#4DD0E1"
+		android:popupElevation="30dp"
+		android:scrollbarSize="30dp"
+		android:scrollbarStyle="outsideOverlay"
+		android:scrollbars="horizontal"
+		android:spinnerMode="dropdown"
+		android:splitMotionEvents="true"
+		android:textAlignment="center"
+		android:verticalScrollbarPosition="right"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_bias="1.0"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<com.google.android.material.textfield.TextInputLayout
+		android:id="@+id/textInputLayout"
+		style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+		android:layout_width="221dp"
+		android:layout_height="108dp"
+		android:layout_margin="16dp"
+		android:background="#00000000"
+		android:textColorHint="#FFFFFF"
+		app:cursorColor="@color/black"
+		app:endIconDrawable="@drawable/baseline_save_48_green"
+		app:endIconMode="custom"
+		app:helperText="Anzahl LED"
+		app:helperTextTextAppearance="@style/TextAppearance.AppCompat.Body2"
+		app:helperTextTextColor="#F7F5F8"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_bias="0.0"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.094"
+		app:prefixText="Stk."
+		app:prefixTextAppearance="@style/TextAppearance.AppCompat.Large"
+		app:prefixTextColor="@color/black">
+
+		<com.google.android.material.textfield.TextInputEditText
+			android:id="@+id/textInputEditText"
+			android:layout_width="176dp"
+			android:layout_height="wrap_content"
+			android:background="@drawable/oval_corner_background"
+			android:backgroundTint="#1976D2"
+			android:inputType="number"
+			android:textAlignment="textStart"
+			android:textColor="@color/black"
+			android:textSize="24sp"
+			android:textStyle="bold"
+			app:endIconDrawable="@drawable/baseline_save_48_green" />
+	</com.google.android.material.textfield.TextInputLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
