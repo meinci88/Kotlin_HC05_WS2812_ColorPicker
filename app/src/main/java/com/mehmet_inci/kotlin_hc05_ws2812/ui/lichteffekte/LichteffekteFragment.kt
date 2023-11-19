@@ -7,39 +7,41 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import com.mehmet_inci.kotlin_hc05_ws2812.BluetoothHolder
 import com.mehmet_inci.kotlin_hc05_ws2812.ColorPickerViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.MainViewModel
+import com.mehmet_inci.kotlin_hc05_ws2812.R
 import com.mehmet_inci.kotlin_hc05_ws2812.SharedViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.UserSettingsManager
 import com.mehmet_inci.kotlin_hc05_ws2812.databinding.FragmentLichteffekteBinding
 import com.skydoves.colorpickerview.listeners.ColorListener
-import com.skydoves.colorpickerview.preference.ColorPickerPreferenceManager
 import java.io.OutputStream
 
 class LichteffekteFragment : Fragment() {
     private lateinit var viewModel: MainViewModel
     private lateinit var sharedViewModel: SharedViewModel
+    private lateinit var colorPickerViewModel: ColorPickerViewModel
     private lateinit var saveUserSettingsManager: UserSettingsManager
     private lateinit var getUserSettingsManager: UserSettingsManager
     private var _binding: FragmentLichteffekteBinding? = null
     private val binding get() = _binding!!
-    val btSocket = BluetoothHolder.getBluetoothSocket()
+
+    private val btSocket = BluetoothHolder.getBluetoothSocket()
     val outputStream: OutputStream = btSocket!!.outputStream
-    lateinit var color1: String
     var prgb: IntArray = intArrayOf(0,0,0,0,0)
-    private lateinit var colorPickerViewModel: ColorPickerViewModel
-    var rgb = intArrayOf(0,0,0,0)
+    var seekbar1: IntArray = intArrayOf(0,0)
+    var rgb:IntArray = intArrayOf(0,0,0,0)
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
+        colorPickerViewModel = ViewModelProvider(requireActivity())[ColorPickerViewModel::class.java]
 
         saveUserSettingsManager = UserSettingsManager(requireContext())
         getUserSettingsManager = UserSettingsManager(requireContext())
@@ -54,9 +56,12 @@ class LichteffekteFragment : Fragment() {
                 fromUser: Boolean
             ) {
                 binding.seekBarEffect2.setProgress(0)
-                val value1 = "A" + progress
-                outputStream.write(value1.toByteArray())
-                //outputStream.flush()
+                binding.seekBarBrightness.setProgress(0)
+                val prefixElement = 65 // ('A')
+                seekbar1 = intArrayOf(prefixElement) + progress
+                val byteArray = seekbar1.map {it.toByte() }.toByteArray()
+                outputStream.write(byteArray)
+                outputStream.flush()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
             }
@@ -73,8 +78,11 @@ class LichteffekteFragment : Fragment() {
                 fromUser: Boolean
             ) {
                 binding.seekBarEffect1.setProgress(0)
-                val value2 = "B" + progress
-                outputStream.write(value2.toByteArray())
+                binding.seekBarBrightness.setProgress(0)
+                val prefixElement = 66 // ('B')
+                seekbar1 = intArrayOf(prefixElement) + progress
+                val byteArray = seekbar1.map {it.toByte() }.toByteArray()
+                outputStream.write(byteArray)
                 outputStream.flush()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -82,7 +90,6 @@ class LichteffekteFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
             }
         })
-
         sharedViewModel.getBonded_DeviceName().observe(
             viewLifecycleOwner,
         ) { val1 ->
@@ -92,39 +99,33 @@ class LichteffekteFragment : Fragment() {
         }
         return binding.root
     }
-    
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         colorPickerViewModel = ViewModelProvider(requireActivity())[ColorPickerViewModel::class.java]
 
          binding.colorPickerView.setColorListener(object : ColorListener {
              override fun onColorSelected(color: Int, fromUser: Boolean) {
+                 sharedViewModel.setColorpickerColor(color)
 
-                 val existingArray = intArrayOf(68, 0, 0, 0, 10)
-                 val byteArray1 = existingArray.map {it.toByte() }.toByteArray()
-                 outputStream.write(byteArray1)
-                 outputStream.flush()
-                 val colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.OVERLAY)
-                 // Extrahiere den ARGB-Farbwert aus dem ColorEnvelope-Objekt des colorPickerView
-                 val argb = binding.colorPickerView.colorEnvelope.argb
+                 // Retrieve ARGB color values from the color picker view and store them in argbVal
+                 val argbVal = binding.colorPickerView.colorEnvelope.argb
                  colorPickerViewModel.selectedColor = color
                  // Use sliceArray to create a new array 'rgb' excluding the first element (alpha channel)
-                 rgb = argb.sliceArray(1 until argb.size)
+                 rgb = argbVal.sliceArray(1 until argbVal.size)
                  // 'rgb' now contains only the RGB values from the original ARGB array
                  sharedViewModel.getvalBrightness().observe(
                      viewLifecycleOwner,
                  ){val1 ->
+                     // Update the RGB array by adding the new brightness value
                      rgb = intArrayOf(val1) + rgb
                  }
                  val prefixElement = 68
                  prgb = intArrayOf(prefixElement) + rgb
                  sharedViewModel.setprgb(prgb)
                  val byteArray = prgb.map {it.toByte() }.toByteArray()
-
                  outputStream.write(byteArray)
                  outputStream.flush()
-
-
              }
          })
 
@@ -135,7 +136,15 @@ class LichteffekteFragment : Fragment() {
                 progress: Int,
                 fromUser: Boolean
             ) {
+                sharedViewModel.getColorpickerColor().observe(
+                    viewLifecycleOwner,
+                ){val_Color->
+                    binding.seekBarBrightness.thumb.setTint(val_Color)
+                }
+                binding.seekBarEffect1.setProgress(0)
+                binding.seekBarEffect2.setProgress(0)
                 sharedViewModel.setvalBrigtness(progress)
+                binding.tvBrightness.text = progress.toString()
                 prgb[1] = progress
                 val byteArray = prgb.map {it.toByte() }.toByteArray()
                 outputStream.write(byteArray)

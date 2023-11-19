@@ -56,6 +56,7 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.github.yukuku:ambilwarna:2.0.1")
     implementation("com.github.skydoves:colorpickerview:2.3.0")
+    implementation("com.github.skydoves:colorpicker-compose:1.0.5")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

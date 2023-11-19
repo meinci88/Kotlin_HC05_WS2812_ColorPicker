@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 
 class SharedViewModel : ViewModel() {
 
+
     // Bluetooth bonded Devicesform SettingsFragment to MainActivity
     private val devicesList = MutableLiveData<List<String>>()
     fun setdevicesListValue(val_DevicesList: List<String>) { devicesList.value = val_DevicesList }
@@ -36,8 +37,10 @@ class SharedViewModel : ViewModel() {
     fun setValueSeekbar3(val3: String) { string_valueSeekbar3.value = val3 }
     fun getValueSeekbar3(): LiveData<String> { return string_valueSeekbar3 }
 
-    private val valBrightness = MutableLiveData<Int>()
+    //private val valBrightness = MutableLiveData<Int>()
+    private val valBrightness = MutableLiveData<Int>().apply { value = DEFAULT_VALUE }
     fun setvalBrigtness(val1: Int) { valBrightness.value = val1}
+    companion object { const val DEFAULT_VALUE = 0 }// Hier setzen Sie den gewünschten Standardwert
     fun getvalBrightness(): LiveData<Int> { return valBrightness}
 
     // Bonded Device
