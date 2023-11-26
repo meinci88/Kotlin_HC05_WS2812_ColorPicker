@@ -39,14 +39,30 @@ class SharedViewModel : ViewModel() {
 
     //private val valBrightness = MutableLiveData<Int>()
     private val valBrightness = MutableLiveData<Int>().apply { value = DEFAULT_VALUE }
-    fun setvalBrigtness(val1: Int) { valBrightness.value = val1}
+    fun setvalBrigtness(BrightnessVal: Int) { valBrightness.value = BrightnessVal}
     companion object { const val DEFAULT_VALUE = 0 }// Hier setzen Sie den gewünschten Standardwert
     fun getvalBrightness(): LiveData<Int> { return valBrightness}
+
+
+
+    // Colorpicker Color
+    private val ColorpickerColor = MutableLiveData<Int>()
+    fun setColor(colorVal: Int){ColorpickerColor.value = colorVal}
+    fun getColor(): LiveData<Int> { return ColorpickerColor}
+
+
+    private val ScrollProgress = MutableLiveData<Int>()
+    fun setScrollProgressVal(ProgressVal: Int){ScrollProgress.value = ProgressVal}
+    fun getScrollProgressVal(): LiveData<Int>{return ScrollProgress}
+
+
 
     // Bonded Device
     private val Bonded_DeviceName = MutableLiveData<String>()
     fun setBonded_DeviceName(val1: String) { Bonded_DeviceName.value = val1 }
     fun getBonded_DeviceName(): LiveData<String> { return Bonded_DeviceName }
+
+
 
     private val prgb = MutableLiveData<IntArray>()
     fun setprgb(val5: IntArray) {prgb.value = val5}

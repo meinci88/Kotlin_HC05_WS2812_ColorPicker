@@ -11,7 +11,9 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.speech.SpeechRecognizer
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -19,6 +21,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -45,12 +48,16 @@ class SettingsFragment : Fragment() {
     var itemName: String? = null
     private val binding get() = _binding!!
 
+
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
+
+
         // get BluetoothAdapter from MainActivity
         mBluetoothAdapter = BluetoothHolder.getbluetoothAdapter()
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
@@ -58,6 +65,8 @@ class SettingsFragment : Fragment() {
         saveUserSettingsManager = UserSettingsManager(requireContext())
         getUserSettingsManager = UserSettingsManager(requireContext())
         devList()
+
+
 
         sharedViewModel.getBonded_DeviceName().observe(
             viewLifecycleOwner,
@@ -71,6 +80,8 @@ class SettingsFragment : Fragment() {
                 binding.spinner.visibility = View.VISIBLE
             }
         }
+
+
 
         binding.textInputLayout.setEndIconOnClickListener {
             Toast.makeText(requireContext(), binding.textInputEditText.text.toString() + "LEDs gespeichert", Toast.LENGTH_SHORT).show()
@@ -217,4 +228,5 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
     }
+
 }
