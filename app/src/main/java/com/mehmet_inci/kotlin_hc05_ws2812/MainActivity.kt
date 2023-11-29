@@ -4,14 +4,17 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -26,7 +29,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+    private lateinit var textToSpeech: TextToSpeech
     private val sharedViewModel: SharedViewModel by viewModels()
 
     private lateinit var binding: ActivityMainBinding
@@ -41,6 +45,20 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         BluetoothHolder.setbluetoothAdapter(mBluetoothAdapter)
+        textToSpeech = TextToSpeech(this, this)
+
+        // Check if TTS is available
+        if (isTTSAvailable()) {
+            // TTS is available, you can use it
+        } else {
+            // TTS is not available, prompt the user to install it
+            val installTTSIntent = Intent()
+            installTTSIntent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
+            startActivity(installTTSIntent)
+        }
+
+
+
 
         val mainViewModel =
             ViewModelProvider(this).get(MainViewModel::class.java)
@@ -58,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
     }
 
     override fun onStart() {
@@ -124,4 +143,33 @@ class MainActivity : AppCompatActivity() {
         val dialog = builder.create()
         dialog.show()
     }
+
+    private fun isTTSAvailable(): Boolean {
+        val intent = Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA)
+        return packageManager.resolveActivity(intent, 0) != null
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // TTS initialization success
+            // You can use the textToSpeech object now
+        } else {
+            // TTS initialization failed, handle accordingly
+        }
+    }
+    override fun onDestroy() {
+        if (textToSpeech.isSpeaking) {
+            textToSpeech.stop()
+        }
+        textToSpeech.shutdown()
+        super.onDestroy()
+    }
+
+//    override fun onRestart() {
+//        super.onRestart()
+//        // Example usage inside your activity or fragment
+//        val textToRead = "Ahmetbey, Kezban hanIm, merve hanIm ve Hüseyin bey, iyimisiniz, özür dilerim, Mehmetbeyi unuttum "
+//        textToSpeech.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, null)
+//    }
+
 }

@@ -4,8 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -25,10 +26,12 @@ import com.mehmet_inci.kotlin_hc05_ws2812.MainViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.SharedViewModel
 import com.mehmet_inci.kotlin_hc05_ws2812.UserSettingsManager
 import com.mehmet_inci.kotlin_hc05_ws2812.databinding.FragmentLichteffekteBinding
+import com.mehmet_inci.kotlin_hc05_ws2812.ui.settings.MicrophoneUtil
 import com.skydoves.colorpickerview.listeners.ColorListener
 import java.io.OutputStream
 
-class LichteffekteFragment : Fragment() {
+class LichteffekteFragment : Fragment(){
+
     private lateinit var viewModel: MainViewModel
     private lateinit var sharedViewModel: SharedViewModel
     private lateinit var colorPickerViewModel: ColorPickerViewModel
@@ -36,14 +39,14 @@ class LichteffekteFragment : Fragment() {
     private lateinit var getUserSettingsManager: UserSettingsManager
     private var _binding: FragmentLichteffekteBinding? = null
     private val binding get() = _binding!!
+    private lateinit var handler: Handler
+    private lateinit var runnable: Runnable
 
     private val btSocket = BluetoothHolder.getBluetoothSocket()
     val outputStream: OutputStream = btSocket!!.outputStream
     var prgb: IntArray = intArrayOf(0, 0, 0, 0, 0)
     var seekbar1: IntArray = intArrayOf(0, 0)
     var rgb: IntArray = intArrayOf(0, 0, 0, 0)
-    private var globalProgress: Int = 0
-    private var globalBrightness: Int = 0
     private var globalColor: Int = 0
     private val speechRecognizer: SpeechRecognizer by lazy {
         SpeechRecognizer.createSpeechRecognizer(
@@ -54,9 +57,9 @@ class LichteffekteFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
             it?.let {
                 if (it) {
-                    Toast.makeText(requireContext(), "Permission Granted", Toast.LENGTH_SHORT)
+                    Toast.makeText(requireContext(),
+                        "Permission Granted", Toast.LENGTH_SHORT)
                         .show()
-
                 }
             }
         }
@@ -75,7 +78,19 @@ class LichteffekteFragment : Fragment() {
         getUserSettingsManager = UserSettingsManager(requireContext())
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         _binding = FragmentLichteffekteBinding.inflate(inflater, container, false)
+//-----------------------------------------------------------------------------------------------
+        // Set this fragment as the microphone listener
+        MicrophoneUtil.MicrophoneUtil.setMicrophoneListener(requireContext())
 
+        // Example: Get microphone amplitude in a coroutine
+        val amplitude = MicrophoneUtil.MicrophoneUtil.getMicrophoneAmplitude(requireContext())
+        // Use the amplitude as needed (e.g., update UI)
+        requireActivity().runOnUiThread {
+            binding.seekBarScroll.setProgress(amplitude)
+            // Update UI or perform other actions with the amplitude
+        }
+
+//-----------------------------------------------------------------------------------------------
         binding.btnListen.setOnTouchListener { view, motionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_UP -> {
@@ -89,7 +104,6 @@ class LichteffekteFragment : Fragment() {
                     }
                     return@setOnTouchListener true
                 }
-
                 else -> {
                     return@setOnTouchListener true
                 }
@@ -199,10 +213,8 @@ class LichteffekteFragment : Fragment() {
 
             override fun onEndOfSpeech() {
             }
-
             override fun onError(p0: Int) {
             }
-
             override fun onResults(bundle: Bundle?) {
                 bundle?.let {
                     val result = it.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -217,7 +229,6 @@ class LichteffekteFragment : Fragment() {
                                 "At least one of the target words was found.",
                                 Toast.LENGTH_SHORT
                             ).show()
-
                         }
                     }
                     // Iterate through each target word
@@ -229,9 +240,10 @@ class LichteffekteFragment : Fragment() {
                                 when (targetWord) {
                                     "licht an" -> LichtAn(45)
                                     "licht aus" -> LichtAus()
-
-
                                     "Licht rot" -> LichtRot()
+                                    "Licht blau" -> LichtBlau()
+                                    "Licht grün" -> LichtGrün()
+
                                     // Add more cases as needed for additional target words
                                     else -> println("$targetWord found in the recognized text.")
                                 }
@@ -252,16 +264,14 @@ class LichteffekteFragment : Fragment() {
     }
 
     fun getPermissionOverO(context: Context, call: () -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (ActivityCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.RECORD_AUDIO,
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                call.invoke()
-            } else {
-                allowPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-            }
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.RECORD_AUDIO,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            call.invoke()
+        } else {
+            allowPermission.launch(android.Manifest.permission.RECORD_AUDIO)
         }
     }
 
@@ -273,9 +283,9 @@ class LichteffekteFragment : Fragment() {
         binding.colorPickerView.setColorListener(object : ColorListener {
             override fun onColorSelected(color: Int, fromUser: Boolean) {
                 globalColor = color
-
                 sharedViewModel.setColorpickerColor(color)
-
+                // Initialize handler and runnable
+                handler = Handler(Looper.getMainLooper())
                 // Retrieve ARGB color values from the color picker view and store them in argbVal
                 val argbVal = binding.colorPickerView.colorEnvelope.argb
                 colorPickerViewModel.selectedColor = color
@@ -306,16 +316,6 @@ class LichteffekteFragment : Fragment() {
                 ) { BrightnessVal ->
                     Bright = BrightnessVal
                 }
-
-
-                //val seekBarState = binding.seekBarScroll.progress
-                /* if (Bright == 0){
-                     if (Progg >= 0){
-                         Scroll()
-                     }
-                 }*/
-
-
             }
         })
 
@@ -341,10 +341,8 @@ class LichteffekteFragment : Fragment() {
                 outputStream.write(byteArray)
                 outputStream.flush()
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
             }
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
             }
         })
@@ -359,7 +357,7 @@ class LichteffekteFragment : Fragment() {
         }
     }
 
-    /*private fun Scroll(){
+    private fun Scroll(){
         binding.seekBarEffect1.setProgress(0)
         binding.seekBarEffect2.setProgress(0)
         binding.seekBarBrightness.setProgress(0)
@@ -373,19 +371,16 @@ class LichteffekteFragment : Fragment() {
             outputStream.write(byteArray)
             outputStream.flush()
         }
-
-   }*/
+   }
     private fun LichtAn(i: Int) {
         binding.seekBarEffect1.setProgress(0)
         binding.seekBarEffect2.setProgress(0)
         binding.seekBarBrightness.setProgress(0)
-        val prefixElement = 69 // ('E')
+        val prefixElement = 68 // ('E')
         seekbar1 = intArrayOf(prefixElement) + i
         val byteArray = seekbar1.map {it.toByte() }.toByteArray()
         outputStream.write(byteArray)
         outputStream.flush()
-
-
     }
     private fun LichtAus() {
         binding.seekBarEffect1.setProgress(0)
@@ -408,6 +403,30 @@ class LichteffekteFragment : Fragment() {
         outputStream.write(byteArray)
         outputStream.flush()
     }
+    private fun LichtBlau() {
+        binding.seekBarEffect1.setProgress(0)
+        binding.seekBarEffect2.setProgress(0)
+        binding.seekBarBrightness.setProgress(0)
+        val prefixElement = 68
+        val rgb1:IntArray  = intArrayOf(45, 0, 0, 255)
+        prgb = intArrayOf(prefixElement) + rgb1
+        val byteArray = prgb.map { it.toByte() }.toByteArray()
+        outputStream.write(byteArray)
+        outputStream.flush()
+    }
+    private fun LichtGrün() {
+        binding.seekBarEffect1.setProgress(0)
+        binding.seekBarEffect2.setProgress(0)
+        binding.seekBarBrightness.setProgress(0)
+        val prefixElement = 68
+        val rgb1:IntArray  = intArrayOf(45, 0, 255, 0)
+        prgb = intArrayOf(prefixElement) + rgb1
+        val byteArray = prgb.map { it.toByte() }.toByteArray()
+        outputStream.write(byteArray)
+        outputStream.flush()
+    }
+
+
 
 }
 
